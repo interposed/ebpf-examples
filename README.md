@@ -117,9 +117,17 @@ daemon's authorized, observe-class path.
 | [signal-trace](signal-trace/) | Signals delivered | `tracepoint/signal/signal_generate` | `sig, sender_pid, sender, target_pid` | Sender = current task |
 | [process-lifecycle](process-lifecycle/) | Exec + exit | `tracepoint/sched/sched_process_exec` + `.../sched_process_exit` | `event, pid, ppid, comm` | **Multi-file** (`common.h` + `.c`), two programs |
 | [exec-ringbuf](exec-ringbuf/) | Process executions (structured) | `tracepoint/syscalls/sys_enter_execve` | `struct exec_event {pid, ppid, comm, filename}` | **Multi-file** + **ring buffer**; operator shows hex/ascii today |
+| [security-audit](security-audit/) | Security-sensitive ops interposed governs (exec, privilege change, outbound connect, ptrace) | 4 hooks: `.../sys_enter_execve` + `.../sys_enter_setuid` + `kprobe/tcp_v4_connect` + `.../sys_enter_ptrace` | `kind` + per-event fields (`pid, comm` always; then `ppid/file`, `uid`, `dst/dport`, `target/req`) | **interposed-specific**, **multi-hook**; unified `kind=`-tagged audit line |
 
 Two examples are multi-file (`process-lifecycle`, `exec-ringbuf`); one uses a
-ring buffer (`exec-ringbuf`). All six classify as observe.
+ring buffer (`exec-ringbuf`); one is multi-hook (`security-audit`). All seven
+classify as observe.
+
+`security-audit` is the **interposed-flavored** example - the audit/enforcement
+domain. It watches the same operation classes interposed's LSM enforcer governs
+(exec, privilege change, outbound connect, ptrace) and prints one `kind=`-tagged
+audit line per event: the observe twin of interposed's decision audit, watching
+the same events in the kernel without enforcing them.
 
 ## How to load one (operator)
 
